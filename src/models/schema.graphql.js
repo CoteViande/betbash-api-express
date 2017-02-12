@@ -3,9 +3,6 @@ import {
   GraphQLSchema,
 } from 'graphql'
 
-import mongoose from 'mongoose'
-import User from './user/user.schema'
-
 import {
   UserQueries,
   UserMutations,
@@ -20,14 +17,12 @@ const RootQuery = new GraphQLObjectType({
   })
 })
 
-
 const RootMutation = new GraphQLObjectType({
   name: 'Mutation',
   fields: () => ({
     addUser: UserMutations.addUser,
   })
 })
-
 
 const schema = new GraphQLSchema({
   query: RootQuery,

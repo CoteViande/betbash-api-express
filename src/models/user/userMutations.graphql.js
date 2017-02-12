@@ -1,3 +1,19 @@
+// mutation ($id: String, $name: String!, $surname: String!, $age: Int) {
+//   addUser(id: $id, name: $name, surname: $surname, age: $age) {
+//     _id
+//     name
+//     surname
+//     age
+//   }
+// }
+
+// {
+//   "id": "58a090044efda022f5523239",
+//   "name": "Encore",
+//   "surname": "Un Autre modifié moultes fois",
+//   "age": 12
+// }
+
 import {
   GraphQLObjectType,
   GraphQLSchema,
@@ -10,7 +26,7 @@ import {
 
 import { saveOrUpdate } from '../utils/operations.mongodb'
 import UserType from './userType.graphql'
-import User from './user.schema'
+import { saveOrUpdateUser } from './user.schema'
 
 const UserMutations = {
   addUser: {
@@ -33,21 +49,7 @@ const UserMutations = {
         type: GraphQLInt,
       },
     },
-    resolve: saveOrUpdate(User),
-    //   (root, args) => {
-    //   return new Promise((resolve, reject) => {
-    //     if (args.id) {
-    //       User.findOneAndUpdate({ _id: args.id }, { $set: args }, { new: true }, (err, res) => {
-    //         err ? reject(err): resolve(res)
-    //       })
-    //     } else {
-    //       var newUser = new User(args);
-    //       newUser.save((err, res) => {
-    //         err ? reject(err): resolve(res)
-    //       })
-    //     }
-    //   })
-    // },
+    resolve: saveOrUpdateUser,
   },
 }
 

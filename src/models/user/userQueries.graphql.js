@@ -9,12 +9,12 @@ import {
 } from 'graphql'
 
 import UserType from './userType.graphql'
-import User from './user.schema'
+import { getListOfUsers, getUserById } from './user.schema'
 
 export default {
   users: {
     type: new GraphQLList(UserType),
-    resolve: User.getListOfUsers,
+    resolve: getListOfUsers,
   },
   user: {
     type: UserType,
@@ -23,6 +23,6 @@ export default {
         type: GraphQLID
       },
     },
-    resolve: User.getUserById,
+    resolve: getUserById,
   },
 }

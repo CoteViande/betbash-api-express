@@ -1,13 +1,13 @@
 import mongoose from 'mongoose'
+mongoose.Promise = global.Promise
+
+import {
+  getObjectById,
+  getAllObjects,
+  saveOrUpdate,
+} from '../utils/operations.mongodb'
 
 const UserSchema = new mongoose.Schema({
-  // id: {
-  //   type: String,
-  //   required: true,
-  //   unique: true,
-  //   index: true,
-  //   default: mongoose.Types.ObjectId,
-  // },
   name: String,
   surname: String,
   age: Number,
@@ -24,26 +24,8 @@ const User = mongoose.model('User', UserSchema)
 
 export default User
 
-export const getUserById = ({id}) => {
-  return new Promise((resolve, reject) => {
-    User.find({ id: id }).exec((err, res) => {
-      err ? reject(err) : resolve(res[id]);
-    })
-  });
-}
+export const getUserById = getObjectById(User)
 
-export const updateUser = user => {
-  return new Promise((resolve, reject) => {
-    user.save((err, res) => {
-      err ? reject(err): resolve(res);
-    });
-  });
-}
+export const saveOrUpdateUser = saveOrUpdate(User)
 
-export const getListOfUsers = () => {
-  return new Promise((resolve, reject) => {
-    User.find({}).populate('hobbies friends').exec((err, res) => {
-      err ? reject(err) : resolve(res);
-    });
-  });
-}
+export const getListOfUsers = getAllObjects(User)
