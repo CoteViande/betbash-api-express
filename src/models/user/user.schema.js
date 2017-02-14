@@ -1,5 +1,4 @@
-import mongoose from 'mongoose'
-mongoose.Promise = global.Promise
+import mongoose from '../mongoose.config'
 
 import {
   getObjectById,

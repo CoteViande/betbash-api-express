@@ -1,3 +1,6 @@
+import mongoose from '../mongoose.config'
+
+// Getters
 export const getObjectById = Model => (root, args) => (
   new Promise((resolve, reject) => {
     Model.findOne({ _id: args.id }).exec((err, res) => {
@@ -14,19 +17,41 @@ export const getAllObjects = Model => (root, args) =>(
   })
 )
 
+// Setters
 export const saveObject = Model => (root, args) => (
   new Promise((resolve, reject) => {
     var newObject = new Model(args)
     newObject.save((err, res) => {
-      err ? reject(err): resolve(res)
+      err ? reject(err) : resolve(res)
+    })
+  })
+)
+
+const backupObject = (Model, object) => (
+  new Promise((resolve, reject) => {
+    const backup = object.toObject() // clone data
+    backup.papaId = object._id
+    delete backup._id
+    Model.create(backup, (err, res) => {
+      err ? reject(err) : resolve(res)
     })
   })
 )
 
 export const updateObject = Model => (root, args) => (
   new Promise((resolve, reject) => {
-    Model.findOneAndUpdate({ _id: args.id }, { $set: args }, { new: true }, (err, res) => {
-      err ? reject(err): resolve(res)
+    Model.findOne({ _id: args.id }).exec(async (error, object) => {
+      if (error) return reject(error)
+      try {
+        await backupObject(Model, object)
+      } catch (err) {
+        throw new Error('backup failed')
+      }
+      object.set(args)
+      object.set({ timestamp: new Date })
+      object.save((err, res) => {
+        err ? reject(err): resolve(res)
+      })
     })
   })
 )
@@ -36,4 +61,9 @@ export const saveOrUpdate = Model => (root, args) => {
     return updateObject(Model)(root, args)
   }
   return saveObject(Model)(root, args)
+}
+
+export const removeObject = Model => (root, args) => {
+  if (!args.id) throw new Error("Cannot remove unexisting object")
+  updateObject(Model)(root, { id: args.id, deleted: true })
 }
