@@ -10,8 +10,7 @@
 // {
 //   "id": "58a090044efda022f5523239",
 //   "name": "Encore",
-//   "surname": "Un Autre modifié moultes fois",
-//   "age": 12
+//   "surname": "Un Autre modifié moultes fois"
 // }
 
 import {
@@ -43,10 +42,6 @@ const UserMutations = {
       surname: {
         name: 'surname',
         type: new GraphQLNonNull(GraphQLString),
-      },
-      age:{
-        name: 'age',
-        type: GraphQLInt,
       },
     },
     resolve: saveOrUpdateUser,

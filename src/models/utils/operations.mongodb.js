@@ -1,5 +1,3 @@
-import mongoose from '../mongoose.config'
-
 // Getters
 export const getObjectById = Model => (root, args) => (
   new Promise((resolve, reject) => {
@@ -41,11 +39,11 @@ const backupObject = (Model, object) => (
 export const updateObject = Model => (root, args) => (
   new Promise((resolve, reject) => {
     Model.findOne({ _id: args.id }).exec(async (error, object) => {
-      if (error) return reject(error)
+      if (error) { reject(error) }
       try {
         await backupObject(Model, object)
       } catch (err) {
-        throw new Error('backup failed')
+        resject(err)
       }
       object.set(args)
       object.set({ timestamp: new Date })
@@ -57,9 +55,7 @@ export const updateObject = Model => (root, args) => (
 )
 
 export const saveOrUpdate = Model => (root, args) => {
-  if (args.id) {
-    return updateObject(Model)(root, args)
-  }
+  if (args.id) return updateObject(Model)(root, args)
   return saveObject(Model)(root, args)
 }
 
