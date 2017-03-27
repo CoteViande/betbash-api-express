@@ -8,7 +8,7 @@ import morgan from 'morgan'
 import logger from './utils/logger'
 import schema from './models/schema.graphql'
 import * as config from './config'
-import { register } from './auth'
+import { register, login } from './auth'
 
 mongoose.connect('mongodb://localhost:27017/coldroom')
 const app = express()
@@ -16,9 +16,7 @@ app.use(helmet())
 app.use(bodyParser.json())
 app.use(morgan('dev', {
   'stream': {
-    write: (message, encoding) => {
-      logger.info(message)
-    },
+    write: (message, encoding) => logger.info(message),
   },
 }))
 
@@ -33,6 +31,7 @@ app.post('/post', (req, res) => {
 
 // curl --data "email=yo@ya.yu&password=something" http://localhost:4000/register
 app.post('/register', register)
+app.post('/login', login)
 
 app.use(config.GRAPHQL_URL, graphqlHTTP({
   schema,
@@ -40,7 +39,7 @@ app.use(config.GRAPHQL_URL, graphqlHTTP({
 }))
 
 app.use((err, req, res, next) => {
-  logger.debug('error?')
+  logger.error(err)
   if (err.name === 'UnauthorizedError') {
     res.status(401)
     res.json({
