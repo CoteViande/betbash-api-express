@@ -11,7 +11,7 @@ import schema from './models/schema.graphql'
 import { errorHandler } from './utils/errors'
 import logger from './utils/logger'
 
-mongoose.connect('mongodb://localhost:27017/coldroom')
+mongoose.connect(config.MONGODB_URL)
 const app = express()
 app.use(helmet())
 app.use(bodyParser.json())

@@ -2,6 +2,7 @@ import mongoose from '../mongoose.config'
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 import * as config from '../../config'
+import logger from '../../utils/logger'
 
 import {
   getObjectById,
@@ -16,6 +17,11 @@ const UserSchema = new mongoose.Schema({
     required : true,
   },
   password: {
+    email: {
+      type: String,
+      unique: true,
+      required: false,
+    }
     hash: String,
     salt: String,
   },
@@ -26,11 +32,21 @@ const UserSchema = new mongoose.Schema({
       required : false,
     },
     email: String,
-    name: String,
+    data: String,
   },
   logoutFromAllDevicesAt: Date, // unused
-  name: String,
-  surname: String,
+  name: {
+    firstName: {
+      type: String,
+      unique: false,
+      required : true, // TODO TOBE || !TOBE ?
+    },
+    lastName: {
+      type: String,
+      unique: false,
+      required : false,
+    },
+  },
   friends: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -56,6 +72,26 @@ UserSchema.methods.generateJWToken = function() {
   }, jwtConfig.secret, {
     expiresIn: jwtConfig.expiration,
   })
+}
+
+UserSchema.methods.getFullName = function() {
+  return (this.firstName + ' ' + this.lastName)
+}
+UserSchema.methods.hydrateProfileWithFacebookData = function(facebookData) {
+  if (this.facebook.id && this.facebook.id !== facebookUser.id) { // possible on email login?
+    logger.warn(`Overrinding facebook id, from ${this.facebook.id} to ${facebookUser.id}`)
+  }
+  this.facebook.id = facebookUser.id
+  if (!facebookUser.email) {
+    logger.warn(`No email in Facebook profile of ${facebookUser.id}`)
+  }
+  this.facebook.email = facebookUser.email
+  if (!this.email) {
+    this.email = facebookUser.email || 'unknown'
+  }
+  this.name.firstName = facebookUser.name.first_name
+  this.name.lastName = facebookUser.name.last_name
+  this.facebook.data = facebookUser // TODO check if possible (stringify?)
 }
 
 UserSchema.set('toJSON', { getters: true })
