@@ -8,6 +8,6 @@ export const jwt = () => {
   }
   return ({
     secret: process.env.JWT_SECRET || 'jEsuIs1STr!nG$éCrèTediFFICil3à2-VIE-NeZ',
-    expiration: 60 * 60, // seconds
+    expiration: 15 * 60, // seconds
   })
 }

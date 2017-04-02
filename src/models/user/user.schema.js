@@ -13,14 +13,20 @@ const UserSchema = new mongoose.Schema({
   email: {
     type: String,
     unique: true,
-    required : true
+    required : true,
   },
-  hash: String, // or facebook token
-  salt: String,
-  facebookToken: {
-    type: String,
-    unique: true,
-    required : false
+  password: {
+    hash: String,
+    salt: String,
+  },
+  facebook: {
+    id: {
+      type: String,
+      unique: true,
+      required : false,
+    },
+    email: String,
+    name: String,
   },
   logoutFromAllDevicesAt: Date, // unused
   name: String,
@@ -32,12 +38,12 @@ const UserSchema = new mongoose.Schema({
 })
 
 UserSchema.methods.setPassword = function(password) {
-  this.salt = crypto.randomBytes(16).toString('hex');
-  this.hash = crypto.pbkdf2Sync(password, this.salt, 1000, 64).toString('hex');
+  this.password.salt = crypto.randomBytes(16).toString('hex');
+  this.password.hash = crypto.pbkdf2Sync(password, this.password.salt, 1000, 64).toString('hex');
 }
 UserSchema.methods.isPasswordValid = function(password) {
-  const hash = crypto.pbkdf2Sync(password, this.salt, 1000, 64).toString('hex')
-  return this.hash === hash
+  const hash = crypto.pbkdf2Sync(password, this.password.salt, 1000, 64).toString('hex')
+  return this.password.hash === hash
 }
 
 const jwtConfig = config.jwt()
