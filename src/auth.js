@@ -1,4 +1,3 @@
-import request from 'request'
 import crypto from 'crypto'
 
 import User from './models/user/user.schema'
@@ -6,113 +5,98 @@ import * as config from './config'
 import { lookup } from './utils/inputFormat'
 import outputFormat from './utils/outputFormat'
 import { UserAlreadyExistsError, InvalidCredentialsError } from './utils/errors'
+import requestPromise from './utils/requestPromise'
 import logger from './utils/logger'
 
 const getUserWithToken = user => {
   const token = user.generateJWToken()
   return ({
     id: user._id,
+    name: user.name,
+    email: user.email,
     token,
   })
 }
 
-export const register = (req, res, next) => {
-  const email = lookup(req, 'email', true)
-  const password = lookup(req, 'password', true)
+export const register = async (req, res, next) => {
+  try {
+    const email = lookup(req, 'email', true)
+    const password = lookup(req, 'password', true)
 
-  User.findOne({ 'password.email': email }, (err, exists) => {
-    if (err) return next(err)
-    if (!!exists) return next(new UserAlreadyExistsError())
+    const userAlreadyExists = await User.findOne({ 'password.email': email })
+    if (!!userAlreadyExists) throw new UserAlreadyExistsError()
 
     const user = new User()
     user.email = email
     user.password.email = email
     user.setPassword(password)
 
-    user.save(err => {
-      if (err) return next(err)
-
-      res.json(outputFormat(getUserWithToken(user)))
-    })
-  })
+    const user = await user.save()
+    res.json(outputFormat(getUserWithToken(user)))
+  } catch (err) {
+    next(err)
+  }
 }
 
-export const login = (req, res, next) => {
-  const email = lookup(req, 'email', true)
-  const password = lookup(req, 'password', true)
+export const login = async (req, res, next) => {
+  try {
+    const email = lookup(req, 'email', true)
+    const password = lookup(req, 'password', true)
 
-  User.findOne({ 'password.email': email }, (err, user) => {
-    if (err) return next(err)
-    if (!user) return next(new InvalidCredentialsError())
-    if (!user.isPasswordValid(password)) return next(new InvalidCredentialsError())
+    const user = await User.findOne({ 'password.email': email })
+
+    if (!user) throw new InvalidCredentialsError()
+    if (!user.isPasswordValid(password)) throw new InvalidCredentialsError()
 
     res.json(outputFormat(getUserWithToken(user)))
-  })
+  } catch (err) {
+    next(err)
+  }
 }
 
-export const facebookSignIn = (req, res, next) => {
-  const FBAccessToken = lookup(req, 'FBAccessToken', true)
+const appSecretProof = (FBAppSecret, FBAccessToken) => (
+  crypto.createHmac('sha256', FBAppSecret).update(FBAccessToken).digest('hex')
+)
 
-  const graphVersion = 'v2.8'
-  const profileURL = `https://graph.facebook.com/${graphVersion}/me`
-  const fields = 'id,email,picture.type(large),first_name,last_name,middle_name,link,gender'
-  const FBAppSecret = config.facebook().secret
-  const FBProofToken = crypto.createHmac('sha256', FBAppSecret).update(FBAccessToken).digest('hex')
+export const facebookSignIn = async (req, res, next) => {
+  try {
+    const FBAccessToken = lookup(req, 'FBAccessToken', true)
 
-  const options = {
-    method: 'GET',
-    url: profileURL,
-    qs: {
-      access_token: FBAccessToken,
-      appsecret_proof: FBProofToken,
-      fields: fields,
-    },
-    headers: {
-      'cache-control': 'no-cache',
-      'content-type': 'application/json',
-    },
-    json: true,
-  }
+    const options = {
+      method: 'GET',
+      url: `https://graph.facebook.com/${config.facebook().graphVersion}/me`,
+      qs: {
+        access_token: FBAccessToken,
+        appsecret_proof: appSecretProof(config.facebook().secret, FBAccessToken),
+        fields: config.facebook().fields,
+      },
+      headers: {
+        'cache-control': 'no-cache',
+        'content-type': 'application/json',
+      },
+      json: true,
+    }
 
-  request(options, (error, response, facebookUser) => {
-    if (error) return next(new Error(error))
-    if (facebookUser.error) return next(new Error(
-      facebookUser.error.message + ' => facebook_trace_id: ' + facebookUser.error.fbtrace_id
-    ))
-
+    const facebookUser = await requestPromise(options)
     logger.debug('Facebook user response object: ', facebookUser)
+    if (facebookUser.error) throw new Error(
+      facebookUser.error.message + ' => facebook_trace_id: ' + facebookUser.error.fbtrace_id
+    )
+
     const facebookId = facebookUser.id
     const email = facebookUser.email
-    User.findOne({'facebook.id': facebookId}, (err, user) => {
-      if (err) return next(err)
 
-      if (!user) {
-        User.findOne({'email': email}, (miss, userByEmail) => {
-          if (miss) return next(miss)
+    let user = await User.findOne({'facebook.id': facebookId})
+    if (!user) {
+      user = await User.findOne({'email': email})
+      user = user || new User()
 
-          const uncompleteUser = userByEmail || new User()
-          uncompleteUser.hydrateProfileWithFacebookData(facebookUser)
-          uncompleteUser.save(mistake => {
-            if (mistake) return next(mistake)
+      user.hydrateProfileWithFacebook(facebookUser)
+      user = await user.save()
+    }
 
-            res.json(outputFormat(getUserWithToken(uncompleteUser)))
-          }))
-          // if (!userByEmail) {
-          //   const newUser = new User()
-          //   newUser.hydrateProfileWithFacebookData(facebookUser)
-          //   newUser.save(mistake => {
-          //     if (mistake) return next(mistake)
-          //
-          //     res.json(outputFormat(getUserWithToken(newUser)))
-          //   })
-          // } else {
-          //   // merge facebook to profile
-          //   res.json(outputFormat(getUserWithToken(userByEmail)))
-          // }
-        }
-      } else {
-        res.json(outputFormat(getUserWithToken(user)))
-      }
-    })
-  })
+    res.json(outputFormat(getUserWithToken(user)))
+  } catch (err) {
+    next(err)
+  }
 }

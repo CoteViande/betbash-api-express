@@ -1,6 +1,7 @@
 import mongoose from '../mongoose.config'
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
+import moment from 'moment'
 import * as config from '../../config'
 import logger from '../../utils/logger'
 
@@ -21,7 +22,7 @@ const UserSchema = new mongoose.Schema({
       type: String,
       unique: true,
       required: false,
-    }
+    },
     hash: String,
     salt: String,
   },
@@ -34,18 +35,9 @@ const UserSchema = new mongoose.Schema({
     email: String,
     data: String,
   },
-  logoutFromAllDevicesAt: Date, // unused
   name: {
-    firstName: {
-      type: String,
-      unique: false,
-      required : true, // TODO TOBE || !TOBE ?
-    },
-    lastName: {
-      type: String,
-      unique: false,
-      required : false,
-    },
+    firstName: String,
+    lastName: String,
   },
   friends: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -64,7 +56,7 @@ UserSchema.methods.isPasswordValid = function(password) {
 
 const jwtConfig = config.jwt()
 UserSchema.methods.generateJWToken = function() {
-  return jwt.sign({
+  const value = jwt.sign({
     data: {
       id: this._id,
     },
@@ -72,13 +64,18 @@ UserSchema.methods.generateJWToken = function() {
   }, jwtConfig.secret, {
     expiresIn: jwtConfig.expiration,
   })
+  const expiresAt = moment().add(jwtConfig.expiration, 'seconds')
+  return {
+    value,
+    expiresAt,
+  }
 }
 
 UserSchema.methods.getFullName = function() {
   return (this.firstName + ' ' + this.lastName)
 }
-UserSchema.methods.hydrateProfileWithFacebookData = function(facebookData) {
-  if (this.facebook.id && this.facebook.id !== facebookUser.id) { // possible on email login?
+UserSchema.methods.hydrateProfileWithFacebook = function(facebookData) {
+  if (this.facebook.id && this.facebook.id !== facebookUser.id) { // possible on FB login email case?
     logger.warn(`Overrinding facebook id, from ${this.facebook.id} to ${facebookUser.id}`)
   }
   this.facebook.id = facebookUser.id

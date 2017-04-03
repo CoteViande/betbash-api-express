@@ -20,5 +20,7 @@ export const facebook = () => {
   return({
     secret: process.env.FACEBOOK_APP_SECRET || '6b466ac6ac5fafcb9ba569ebea602455',
     public: process.env.NODE_ENV !== 'development' ? 'PUBLIC_ID' : 'TEST_PUBLIC_ID',
+    fields: 'id,email,picture.type(large),first_name,last_name,middle_name,link,gender',
+    graphVersion: 'v2.8',
   })
 }

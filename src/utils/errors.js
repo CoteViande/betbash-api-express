@@ -63,6 +63,7 @@ export const errorHandler = (err, req, res, next) => {
   logger.error(err)
   switch (err.name) {
     case 'BAD_REQUEST':
+    case 'ValidationError':
       res.status(400).json(errorResponses.BAD_REQUEST)
       break
     case 'UNAUTHORIZED':
@@ -75,7 +76,7 @@ export const errorHandler = (err, req, res, next) => {
       res.status(401).json(errorResponses.USER_ALREADY_EXISTS)
       break
     default:
-      logger.error('Unhandled error!!')
+      logger.error('Unhandled error: ', err.name)
       break
   }
 }
