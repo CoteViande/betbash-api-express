@@ -25,6 +25,12 @@ const errorsJSON = {
     title: 'Invalid credentials',
     message: 'The credentials are not valid.',
   },
+  INVALID_TOKEN: {
+    status: 401,
+    code: 'INVALID_TOKEN',
+    title: 'Invalid token',
+    message: 'The token is not valid.',
+  },
 }
 
 const NewErrorType = name => (function(message) {
@@ -37,6 +43,7 @@ const NewErrorType = name => (function(message) {
 export const UnauthorizedError = NewErrorType('UNAUTHORIZED')
 export const BadRequestError = NewErrorType('BAD_REQUEST')
 export const InvalidCredentialsError = NewErrorType('INVALID_CREDENTIALS')
+export const InvalidTokenError = NewErrorType('INVALID_TOKEN')
 export const UserAlreadyExistsError = NewErrorType('USER_ALREADY_EXISTS')
 
 const errorToJson = err => ({
@@ -71,6 +78,10 @@ export const errorHandler = (err, req, res, next) => {
       break
     case 'INVALID_CREDENTIALS':
       res.status(401).json(errorResponses.INVALID_CREDENTIALS)
+      break
+    case 'INVALID_TOKEN':
+    case 'TokenExpiredError':
+      res.status(401).json(errorResponses.INVALID_TOKEN)
       break
     case 'USER_ALREADY_EXISTS':
       res.status(401).json(errorResponses.USER_ALREADY_EXISTS)

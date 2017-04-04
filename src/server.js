@@ -6,7 +6,8 @@ import graphqlHTTP from 'express-graphql'
 import morgan from 'morgan'
 
 import * as config from './config'
-import * as auth from './auth'
+import authorizationMiddleware from './authorization'
+import * as authentication from './authentication'
 import schema from './models/schema.graphql'
 import { errorHandler } from './utils/errors'
 import logger from './utils/logger'
@@ -15,21 +16,28 @@ mongoose.connect(config.MONGODB_URL)
 const app = express()
 app.use(helmet())
 app.use(bodyParser.json())
-app.use(morgan('dev', {
+
+app.use(morgan('dev', { // loggerMiddleware
   'stream': {
     write: (message, encoding) => logger.info(message),
   },
 }))
 
+app.post('/register', authentication.register)
+app.post('/login', authentication.login)
+app.get('/facebook/signin', authentication.facebookSignIn)
 
-app.post('/register', auth.register)
-app.post('/login', auth.login)
-app.get('/facebook/signin', auth.facebookSignIn)
+app.use(authorizationMiddleware)
 
-app.use(config.GRAPHQL_URL, graphqlHTTP({
-  schema,
-  graphiql: true,
-}))
+app.use(config.GRAPHQL_URL, graphqlHTTP(
+  req => ({
+    schema,
+    rootValue: {
+      signature: req.signature,
+    },
+    graphiql: true,
+  })
+))
 
 app.use(errorHandler)
 

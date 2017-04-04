@@ -60,7 +60,7 @@ UserSchema.methods.generateJWToken = function() {
     data: {
       id: this._id,
     },
-    // scopes: user.scopes, // SUPER_ADMIN ADMIN
+    scopes: [], //user.scopes, // SUPER_ADMIN ADMIN
   }, jwtConfig.secret, {
     expiresIn: jwtConfig.expiration,
   })

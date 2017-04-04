@@ -8,15 +8,12 @@ import { UserAlreadyExistsError, InvalidCredentialsError } from './utils/errors'
 import requestPromise from './utils/requestPromise'
 import logger from './utils/logger'
 
-const getUserWithToken = user => {
-  const token = user.generateJWToken()
-  return ({
-    id: user._id,
-    name: user.name,
-    email: user.email,
-    token,
-  })
-}
+const getUserWithToken = user => ({
+  token: user.generateJWToken(),
+  id: user._id,
+  name: user.name,
+  email: user.email,
+})
 
 export const register = async (req, res, next) => {
   try {
@@ -26,12 +23,12 @@ export const register = async (req, res, next) => {
     const userAlreadyExists = await User.findOne({ 'password.email': email })
     if (!!userAlreadyExists) throw new UserAlreadyExistsError()
 
-    const user = new User()
+    let user = new User()
     user.email = email
     user.password.email = email
     user.setPassword(password)
 
-    const user = await user.save()
+    user = await user.save()
     res.json(outputFormat(getUserWithToken(user)))
   } catch (err) {
     next(err)
