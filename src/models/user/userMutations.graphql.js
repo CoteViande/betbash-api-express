@@ -39,10 +39,6 @@ const UserMutations = {
         name: 'name',
         type: new GraphQLNonNull(GraphQLString),
       },
-      surname: {
-        name: 'surname',
-        type: new GraphQLNonNull(GraphQLString),
-      },
     },
     resolve: saveOrUpdateUser,
   },

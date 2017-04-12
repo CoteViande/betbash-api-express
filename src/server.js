@@ -6,8 +6,8 @@ import graphqlHTTP from 'express-graphql'
 import morgan from 'morgan'
 
 import * as config from './config'
-import authorizationMiddleware from './authorization'
 import * as authentication from './authentication'
+import * as authorization from './authorization'
 import schema from './models/schema.graphql'
 import { errorHandler } from './utils/errors'
 import logger from './utils/logger'
@@ -23,11 +23,13 @@ app.use(morgan('dev', { // loggerMiddleware
   },
 }))
 
+
 app.post('/register', authentication.register)
 app.post('/login', authentication.login)
 app.get('/facebook/signin', authentication.facebookSignIn)
 
-app.use(authorizationMiddleware)
+app.use(authorization.refreshToken)
+app.use(authorization.identifySignature)
 
 app.use(config.GRAPHQL_URL, graphqlHTTP(
   req => ({
