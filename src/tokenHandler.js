@@ -17,6 +17,7 @@ export const identifySignature = (req, res, next) => {
     logger.debug(tokenPayload)
 
     const expirationDate = moment.unix(tokenPayload.exp)
+
     req.signature = {
       id: tokenPayload.data.id,
       scopes: [],

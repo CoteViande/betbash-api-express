@@ -10,6 +10,7 @@ import {
 
 import UserType from './userType.graphql'
 import { getListOfUsers, getUserById } from './user.schema'
+import { isAdminOrSelf } from '../utils/authorization'
 
 export default {
   users: {
@@ -23,6 +24,9 @@ export default {
         type: GraphQLID
       },
     },
-    resolve: getUserById,
+    resolve: (root, args, context) => {
+      isAdminOrSelf(context.signature, args.id) // TODO change this fissa
+      return getUserById(root, args)
+    },
   },
 }
